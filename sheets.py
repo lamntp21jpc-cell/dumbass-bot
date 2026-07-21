@@ -1,3 +1,5 @@
+import os
+import json
 from datetime import datetime
 
 import gspread
@@ -14,16 +16,26 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-creds = Credentials.from_service_account_file(
-    "google_creds.json",
-    scopes=SCOPES
-)
+if os.getenv("GOOGLE_CREDS_JSON"):
+
+    creds_info = json.loads(os.environ["GOOGLE_CREDS_JSON"])
+
+    creds = Credentials.from_service_account_info(
+        creds_info,
+        scopes=SCOPES
+    )
+
+else:
+
+    creds = Credentials.from_service_account_file(
+        "google_creds.json",
+        scopes=SCOPES
+    )
 
 client = gspread.authorize(creds)
 
 spreadsheet = client.open_by_key(SPREADSHEET_ID)
 worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
-
 
 # ============================================================
 # HELPERS
@@ -31,9 +43,7 @@ worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
 
 def parse_birthday(text: str) -> datetime:
     """
-    Parses birthdays stored in different formats.
-
-    Supported:
+    Supported formats:
         03/07/2004
         3/7/2004
         03/07
@@ -59,38 +69,21 @@ def parse_birthday(text: str) -> datetime:
 
     raise ValueError(f"Invalid birthday format: {text}")
 
-
 # ============================================================
-# MAIN FUNCTION
+# MAIN
 # ============================================================
 
 def load_birthdays():
-    """
-    Reads the Google Sheet and returns a list of dictionaries.
-
-    Example:
-
-    [
-        {
-            "name": "Hoàng Nhật Minh",
-            "department": "BNS",
-            "birthday": datetime(...),
-            "gen": 21,
-            "assignee": "Kiểm",
-        }
-    ]
-    """
 
     rows = worksheet.get_all_values()
 
     people = []
 
-    # Skip the first 4 rows (headers)
+    # Skip first 4 header rows
     for row_number, row in enumerate(rows[4:], start=5):
 
         try:
 
-            # Skip incomplete rows
             if len(row) < 7:
                 continue
 
