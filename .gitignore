@@ -1,4 +1,10 @@
+# Secrets
 .env
 google_creds.json
+
+# Python
 __pycache__/
 *.pyc
+
+# VS Code
+.vscode/
